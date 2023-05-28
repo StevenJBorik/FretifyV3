@@ -2,6 +2,7 @@ const express = require('express');
 const request = require('request');
 const dotenv = require('dotenv');
 const SpotifyWebApi = require('spotify-web-api-node');
+const cors = require('cors'); 
 
 
 const port = 5000;
@@ -30,7 +31,8 @@ var generateRandomString = function (length) {
   return text;
 };
 
-var app = express();
+const app = express();
+app.use(cors()); // Add this line
 
 app.use(express.json());
 

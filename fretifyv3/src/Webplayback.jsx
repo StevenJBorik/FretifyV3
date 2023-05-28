@@ -63,7 +63,7 @@
               console.log(trackId);
       
               try {
-                const response = await fetch(`/audio-analysis/${trackId}`);
+                const response = await fetch(`http://localhost:5000/audio-analysis/${trackId}`);
                 const data = await response.json();
                 // eslint-disable-next-line no-unused-vars
                 const trackAnalysis = data; // Save track analysis data to variable
