@@ -3,9 +3,11 @@ const request = require('request');
 const dotenv = require('dotenv');
 const SpotifyWebApi = require('spotify-web-api-node');
 const cors = require('cors'); 
+const bodyParser = require('body-parser');
 
 
 const port = 5000;
+const bodyParser = require('body-parser');
 
 dotenv.config();
 
@@ -33,8 +35,9 @@ var generateRandomString = function (length) {
 
 const app = express();
 app.use(cors()); // Add this line
-
 app.use(express.json());
+app.use(bodyParser.json());
+
 
 
 let access_token = '';
@@ -134,6 +137,18 @@ app.post('/auth/refresh', (req, res) => {
       res.json({ access_token: access_token });
     }
   });
+});
+
+app.post('/predict-scale-change', (req, res) => {
+  const { trackSections } = req.body;
+
+  // Preprocess the track sections if needed
+
+  // Make predictions using the model
+  const predictions = model.predict([trackSections]); // Assuming `model` is already loaded and accessible
+
+  // Process and send the predictions as the response
+  res.json({ predictions });
 });
 
 app.listen(port, () => {
