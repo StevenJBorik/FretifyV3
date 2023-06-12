@@ -74,20 +74,20 @@
               } catch (error) {
                 console.log('Error retrieving track analysis:', error);
               }
-              try {
-                const response = await fetch('http://localhost:5000/predict-scale-change', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ trackSections }),
-                });
-                const data = await response.json();
-                // Process the prediction result (data) as needed
-                setActive(true);
-              } catch (error) {
-                console.log('Error predicting scale change:', error);
-              }
+              // try {
+              //   const response = await fetch('http://localhost:5000/predict-scale-change', {
+              //     method: 'POST',
+              //     headers: {
+              //       'Content-Type': 'application/json',
+              //     },
+              //     body: JSON.stringify({ trackSections }),
+              //   });
+              //   const data = await response.json();
+              //   // Process the prediction result (data) as needed
+              //   setActive(true);
+              // } catch (error) {
+              //   console.log('Error predicting scale change:', error);
+              // }
             });
       
             player.connect();

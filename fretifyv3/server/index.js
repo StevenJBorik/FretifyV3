@@ -5,9 +5,8 @@ const SpotifyWebApi = require('spotify-web-api-node');
 const cors = require('cors'); 
 const bodyParser = require('body-parser');
 
-
 const port = 5000;
-const bodyParser = require('body-parser');
+
 
 dotenv.config();
 
@@ -34,7 +33,8 @@ var generateRandomString = function (length) {
 };
 
 const app = express();
-app.use(cors()); // Add this line
+
+app.use(cors()); 
 app.use(express.json());
 app.use(bodyParser.json());
 
@@ -91,27 +91,33 @@ app.get('/auth/token', (req, res) => {
   res.json({ access_token: access_token, refresh_token: refresh_token });
 });
 
+let responseSent = false;
+
 app.get('/audio-analysis/:id', async (req, res) => {
+  if (responseSent) {
+    return; // If the response has already been sent, don't process the request again
+  }
+
   const { id } = req.params;
-  console.log('REEE', access_token);
 
   try {
-    console.log('Before audio analysis request')
+    console.log('Before audio analysis request');
     spotifyApi.setAccessToken(access_token);
-    console.log('REEE', access_token);
 
     const response = await spotifyApi.getAudioAnalysisForTrack(id);
-    const data = response.body;
-    console.log('Response:', response);
-    console.log('Data:', data);
+    const { sections } = response.body; // Extract the "sections" property from the response body
+    console.log('Sections:', sections);
 
-    res.json(data);
+    //console.log('Response:', response);
+    //console.log('Data:', data);
+    res.json({ sections })
+    // res.json(data);
+    responseSent = true; 
   } catch (error) {
     console.log('Error retrieving track analysis:', error);
     res.status(500).json({ error: 'Failed to retrieve track analysis' });
   }
 });
-
 
 
 
@@ -139,17 +145,17 @@ app.post('/auth/refresh', (req, res) => {
   });
 });
 
-app.post('/predict-scale-change', (req, res) => {
-  const { trackSections } = req.body;
+// app.post('/predict-scale-change', (req, res) => {
+//   const { trackSections } = req.body;
 
-  // Preprocess the track sections if needed
+//   // Preprocess the track sections if needed
 
-  // Make predictions using the model
-  const predictions = model.predict([trackSections]); // Assuming `model` is already loaded and accessible
+//   // Make predictions using the model
+//   const predictions = model.predict([trackSections]); // Assuming `model` is already loaded and accessible
 
-  // Process and send the predictions as the response
-  res.json({ predictions });
-});
+//   // Process and send the predictions as the response
+//  // res.json({ predictions });
+// });
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
