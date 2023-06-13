@@ -81,8 +81,6 @@
                   body: JSON.stringify({ trackSections }),
                 });
                 const data = await response.json();
-                // Process the prediction result (data) as needed
-                // filler console.log method below, ignore for now
                 console.log(data); 
                 setActive(true);
               } catch (error) {
