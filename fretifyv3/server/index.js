@@ -4,6 +4,10 @@ const dotenv = require('dotenv');
 const SpotifyWebApi = require('spotify-web-api-node');
 const cors = require('cors'); 
 const bodyParser = require('body-parser');
+const tf = require('tensorflow');
+const modelPath = 'C:\\Users\\SBD2RP\\OneDrive - MillerKnoll\\installs\\Desktop\\output\\model.h5';
+const model = tf.keras.models.load_model(modelPath);
+
 
 const port = 5000;
 
@@ -145,17 +149,37 @@ app.post('/auth/refresh', (req, res) => {
   });
 });
 
-// app.post('/predict-scale-change', (req, res) => {
-//   const { trackSections } = req.body;
+app.post('/predict-scale-change', (req, res) => {
+  const { trackSections } = req.body;
 
-//   // Preprocess the track sections if needed
+  // Extract the start values and sort them
+  const startValues = trackSections.map(section => section.start);
 
-//   // Make predictions using the model
-//   const predictions = model.predict([trackSections]); // Assuming `model` is already loaded and accessible
+  // Convert the start values to a numpy array
+  const startValuesArray = tf.tensor(startValues).expandDims(1);
 
-//   // Process and send the predictions as the response
-//  // res.json({ predictions });
-// });
+  // Reshape the start values array
+  const max_length = startValues.length;
+  const reshapedStartValuesArray = tf.reshape(startValuesArray, [startValuesArray.shape[0], 1, max_length]);
+
+  // Make predictions using the model
+  const predictions = predict_scale_change(reshapedStartValuesArray);
+
+  // Process and send the predictions as the response
+  res.json({ predictions });
+});
+
+
+function predict_scale_change(track_sections) {
+  // Reshape the input features
+  track_sections = tf.reshape(track_sections, [track_sections.length, 1, track_sections[0].length]);
+
+  // Make predictions
+  const predictions = model.predict([track_sections]);
+
+  return predictions;
+}
+
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);

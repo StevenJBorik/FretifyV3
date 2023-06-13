@@ -62,8 +62,6 @@
               // Define track id and sections array to be passed to FretiFlow 
               const trackSections = state.track_window.current_track.sections;
               const trackId = state.track_window.current_track.id;
-              console.log(trackId);
-              console.log(trackSections); 
       
               try {
                 const response = await fetch(`http://localhost:5000/audio-analysis/${trackId}`);
@@ -74,20 +72,22 @@
               } catch (error) {
                 console.log('Error retrieving track analysis:', error);
               }
-              // try {
-              //   const response = await fetch('http://localhost:5000/predict-scale-change', {
-              //     method: 'POST',
-              //     headers: {
-              //       'Content-Type': 'application/json',
-              //     },
-              //     body: JSON.stringify({ trackSections }),
-              //   });
-              //   const data = await response.json();
-              //   // Process the prediction result (data) as needed
-              //   setActive(true);
-              // } catch (error) {
-              //   console.log('Error predicting scale change:', error);
-              // }
+              try {
+                const response = await fetch('http://localhost:5000/predict-scale-change', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ trackSections }),
+                });
+                const data = await response.json();
+                // Process the prediction result (data) as needed
+                // filler console.log method below, ignore for now
+                console.log(data); 
+                setActive(true);
+              } catch (error) {
+                console.log('Error predicting scale change:', error);
+              }
             });
       
             player.connect();
