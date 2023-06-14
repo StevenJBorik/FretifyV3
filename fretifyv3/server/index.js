@@ -182,5 +182,5 @@ function predict_scale_change(track_sections) {
 
 
 app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}`);
+  console.log(`Listening at http://0.0.0.0:${port}`);
 });
