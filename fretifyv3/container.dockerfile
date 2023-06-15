@@ -24,8 +24,13 @@ FROM node:14 AS production
 WORKDIR /app
 COPY --from=src /app/src/build ./src/build
 COPY --from=server /app/server ./server
+COPY package*.json ./
 RUN npm install --production
-CMD ["npm", "run", "dev"]
+RUN npm install -g npm-run-all
+CMD ["npm-run-all", "dev"]
+
+
+
 
 # docker run -p 3000:3000 -p 5000:5000 fretify
 #docker run -d --name fretify -p 5000:5000 fretify-image
