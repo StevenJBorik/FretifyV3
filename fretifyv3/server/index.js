@@ -10,14 +10,12 @@ const port = 5000;
 
 dotenv.config();
 
-
-// Load the model asynchronously
-
+const modelPath = './model.h5';
 
 // Load the model
 const loadModel = async () => {
   try {
-    const model = await tf.loadLayersModel('http://fretifyv3:5000/model.h5');
+    const model = await tf.loadLayersModel('http://127.0.0.1:5500/server/model.h5');
     console.log('Model loaded successfully');
     return model;
   } catch (error) {
@@ -31,7 +29,7 @@ const loadModel = async () => {
 
     var spotify_client_id = process.env.SPOTIFY_CLIENT_ID;
     var spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    var spotify_redirect_uri = 'http://fretifyv3:3000/auth/callback';
+    var spotify_redirect_uri = 'http://localhost:3000/auth/callback';
 
     const spotifyApi = new SpotifyWebApi({
       clientId: spotify_client_id,
@@ -199,7 +197,7 @@ const loadModel = async () => {
   }
 
   app.listen(port, () => {
-    console.log(`Listening at http://0.0.0.0:${port}`);
+    console.log(`Listening at http://localhost:${port}`);
   });
 }; 
 

@@ -59,7 +59,7 @@ function WebPlayback({ token }) {
           const trackId = state.track_window.current_track.id;
 
           try {
-            const response = await fetch(`http://fretifyv3:5000/audio-analysis/${trackId}`);
+            const response = await fetch(`http://localhost:5000/audio-analysis/${trackId}`);
             const data = await response.json();
             // eslint-disable-next-line no-unused-vars
             const trackAnalysis = data; // Save track analysis data to variable
@@ -68,7 +68,7 @@ function WebPlayback({ token }) {
             console.log('Error retrieving track analysis:', error);
           }
           try {
-            const response = await fetch('http://fretifyv3:5000/predict-scale-change', {
+            const response = await fetch('http://localhost:5000/predict-scale-change', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
