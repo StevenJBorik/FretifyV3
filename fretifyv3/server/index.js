@@ -10,12 +10,10 @@ const port = 5000;
 
 dotenv.config();
 
-const modelPath = './model.h5';
-
 // Load the model
 const loadModel = async () => {
   try {
-    const model = await tf.loadLayersModel('http://127.0.0.1:5500/server/model.h5');
+    const model = await tf.loadLayersModel('http://127.0.0.1:5500/server/model.json');
     console.log('Model loaded successfully');
     return model;
   } catch (error) {
