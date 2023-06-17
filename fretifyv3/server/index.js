@@ -104,33 +104,37 @@ const loadModel = async () => {
   });
 
   let responseSent = false;
-
+  let currentTimestamp = 0; // Initialize currentTimestamp variable
+  
   app.get('/audio-analysis/:id', async (req, res) => {
     if (responseSent) {
       return; // If the response has already been sent, don't process the request again
     }
-
+  
     const { id } = req.params;
-
-    
+  
     try {
       console.log('Before audio analysis request');
       spotifyApi.setAccessToken(access_token);
-
+  
       const response = await spotifyApi.getAudioAnalysisForTrack(id);
       const { sections } = response.body; // Extract the "sections" property from the response body
       console.log('Sections:', sections);
-
-      //console.log('Re+-*-+ata:', data);
-      res.json({ sections })
-      // res.json(data);
-      responseSent = true; 
+  
+      // Get the current timestamp of the playing track
+      const playerState = await spotifyApi.getMyCurrentPlaybackState();
+      if (playerState.body && playerState.body.progress_ms) {
+        currentTimestamp = playerState.body.progress_ms / 1000; // Convert progress in milliseconds to seconds
+      }
+      
+      // Send the current timestamp and sections in the response
+      res.json({ sections, currentTimestamp });
+      responseSent = true;
     } catch (error) {
       console.log('Error retrieving track analysis:', error);
       res.status(500).json({ error: 'Failed to retrieve track analysis' });
     }
   });
-
 
 
   app.post('/auth/refresh', (req, res) => {
@@ -159,22 +163,17 @@ const loadModel = async () => {
 
 
   app.post('/predict-scale-change', (req, res) => {
-    const { trackSections } = req.body;
-
+    const { trackSections, currentTimestamp } = req.body; // Extract the current timestamp from the request body
+    console.log('Request Body:', req.body);
+  
     // Extract the start values and sort them
     const startValues = trackSections.map(section => section.start);
-
-    // Convert the start values to a tensor
-    const startValuesTensor = tf.tensor(startValues).expandDims(1);
-
-    // Reshape the start values tensor
-    const max_length = startValues.length;
-    const reshapedStartValuesTensor = tf.reshape(startValuesTensor, [startValuesTensor.shape[0], 1, max_length]);
-
+    console.log(startValues);
+  
     try {
       // Make predictions using the model
-      const predictions = predictScaleChange(model, reshapedStartValuesTensor);
-
+      const predictions = predictScaleChange(model, startValues, currentTimestamp);
+  
       // Process and send the predictions as the response
       res.json({ predictions });
     } catch (error) {
@@ -182,17 +181,28 @@ const loadModel = async () => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+  
 
-
-  function predictScaleChange(model, trackSections) {
+  function predictScaleChange(model, startValues, currentTimestamp) {
+    // Convert the current timestamp to a tensor
+    const input = tf.tensor2d([[currentTimestamp]]);
+  
+    // Convert the start values to a tensor
+    const startValuesTensor = tf.tensor2d(startValues, [1, startValues.length]);
+  
     // Reshape the input features
-    trackSections = tf.reshape(trackSections, [trackSections.length, 1, trackSections[0].length]);
-
+    const reshapedInput = tf.reshape(input, [1, 1]);
+  
     // Make predictions
-    const predictions = model.predict([trackSections]);
-
-    return predictions;
+    const predictions = model.predict([startValuesTensor, reshapedInput]);
+  
+    // Get the predicted output
+    const output = predictions.squeeze().arraySync()[0];
+  
+    return output > 0.5 ? 1 : 0;
   }
+  
+  
 
   app.listen(port, () => {
     console.log(`Listening at http://localhost:${port}`);

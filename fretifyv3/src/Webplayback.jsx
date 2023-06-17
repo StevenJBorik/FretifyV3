@@ -46,40 +46,38 @@ function WebPlayback({ token }) {
         });
 
         player.addListener('player_state_changed', async (state) => {
+          console.log('player_state_changed event triggered');
           if (!state) {
             return;
           }
-
+        
           // Update the track and paused state
           setTrack(state.track_window.current_track);
           setPaused(state.paused);
-
+        
           // Define track id and sections array to be passed to FretiFlow
           const trackSections = state.track_window.current_track.sections;
           const trackId = state.track_window.current_track.id;
-
+        
           try {
             const response = await fetch(`http://localhost:5000/audio-analysis/${trackId}`);
             const data = await response.json();
-            // eslint-disable-next-line no-unused-vars
-            const trackAnalysis = data; // Save track analysis data to variable
-            setActive(true);
-          } catch (error) {
-            console.log('Error retrieving track analysis:', error);
-          }
-          try {
-            const response = await fetch('http://localhost:5000/predict-scale-change', {
+            const trackSections = data.sections; // Extract the "sections" data
+            const currentTimestamp = data.currentTimestamp; // Extract the "currentTimestamp" data
+        
+            const predictResponse = await fetch('http://localhost:5000/predict-scale-change', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({ trackSections })
+              body: JSON.stringify({ trackSections, currentTimestamp }) // Include the currentTimestamp in the request body
             });
-            const data = await response.json();
-            console.log(data);
+        
+            const predictData = await predictResponse.json();
+            console.log(predictData);
             setActive(true);
           } catch (error) {
-            console.log('Error predicting scale change:', error);
+            console.log('Error retrieving track analysis:', error);
           }
         });
 
