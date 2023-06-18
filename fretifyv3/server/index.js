@@ -169,7 +169,9 @@ const loadModel = async () => {
     // Extract the start values and sort them
     const startValues = trackSections.map(section => section.start);
     console.log(startValues);
-  
+
+
+      
     try {
       // Make predictions using the model
       const predictions = predictScaleChange(model, startValues, currentTimestamp);
@@ -183,24 +185,38 @@ const loadModel = async () => {
   });
   
 
-  function predictScaleChange(model, startValues, currentTimestamp) {
-    // Convert the current timestamp to a tensor
-    const input = tf.tensor2d([[currentTimestamp]]);
+  function predictScaleChange(model, startValues, currentTimeStamp) {
+    const numSections = startValues.length / 2;
+    const reformattedStartValues = [];
   
-    // Convert the start values to a tensor
-    const startValuesTensor = tf.tensor2d(startValues, [1, startValues.length]);
+    for (let i = 0; i < numSections; i++) {
+      const start = startValues[i * 2];
+      const end = startValues[i * 2 + 1];
+      reformattedStartValues.push([start, end]);
+    }
   
-    // Reshape the input features
-    const reshapedInput = tf.reshape(input, [1, 1]);
+    const inputStartValues = [reformattedStartValues];
   
-    // Make predictions
-    const predictions = model.predict([startValuesTensor, reshapedInput]);
+    const input = tf.tensor2d([[currentTimeStamp]]);
+    const reshapedStartValues = tf.tensor3d(inputStartValues, [1, numSections, 2]);
   
-    // Get the predicted output
+    console.log('reshapedStartValues shape:', reshapedStartValues.shape);
+    console.log('input shape:', input.shape);
+  
+    const predictions = model.predict([reshapedStartValues, input]);
+  
     const output = predictions.squeeze().arraySync()[0];
   
     return output > 0.5 ? 1 : 0;
   }
+  
+  
+  
+  
+  
+  
+  
+  
   
   
 
