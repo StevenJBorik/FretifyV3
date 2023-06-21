@@ -1,0 +1,31 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: container.dockerfile
+    ports:
+      - 5000:5000
+    depends_on:
+      - server
+      - client
+  server:
+    build:
+      context: ./server
+      dockerfile: container.dockerfile
+      target: server
+    command: npm run start
+    volumes:
+      - ./fretifyv3/server:/app/server
+    ports:
+      - 5000:5000
+  client:
+    build:
+      context: ./src
+      dockerfile: container.dockerfile
+      target: src
+    command: npm run start
+    volumes:
+      - ./fretifyv3:/app
+    ports:
+      - 3000:3000
