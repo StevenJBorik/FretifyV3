@@ -88,6 +88,7 @@ const startServer = async () => {
 
   let responseSent = false;
   let currentTimestamp = 0; // Initialize currentTimestamp variable
+  let sections = []; // Declare sections array
 
   app.get('/audio-analysis/:id', async (req, res) => {
     if (responseSent) {
@@ -101,7 +102,7 @@ const startServer = async () => {
       spotifyApi.setAccessToken(access_token);
 
       const response = await spotifyApi.getAudioAnalysisForTrack(id);
-      const { sections } = response.body; // Extract the "sections" property from the response body
+      sections = response.body.sections; // Assign the value to the sections array
       console.log('Sections:', sections);
 
       // Get the current timestamp of the playing track
@@ -143,23 +144,33 @@ const startServer = async () => {
     });
   });
 
-  app.post('/predict-scale-change', (req, res) => {
-    const { trackSections, currentTimestamp } = req.body;
+  app.get('/player-state', async (req, res) => {
+    try {
+      const playerState = await spotifyApi.getMyCurrentPlaybackState();
+      res.json(playerState.body);
+    } catch (error) {
+      console.log('Error retrieving player state:', error);
+      res.status(500).json({ error: 'Failed to retrieve player state' });
+    }
+  });
 
-    const startValues = trackSections.map(section => section.start);
+  app.post('/predict-scale-change', (req, res) => {
+    const { currentTimestamp } = req.body;
 
     try {
-      const predictions = checkTimestamp(startValues, currentTimestamp);
-      res.json({ predictions });
+      const hasMatch = checkTimeStamp(currentTimestamp);
+      res.json({ hasMatch });
     } catch (error) {
       console.error('Error checking timestamp:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
 
-  function checkTimestamp(startValues, currentTimestamp) {
-    const isTimestampMatch = startValues.includes(currentTimestamp) ? 1 : 0;
-    return isTimestampMatch;
+  function checkTimeStamp(currentTimestamp) {
+    const matchingSection = sections.find(
+      (section) => currentTimestamp >= section.start && currentTimestamp < section.start + section.duration
+    );
+    return matchingSection !== undefined;
   }
 
   app.listen(port, () => {
