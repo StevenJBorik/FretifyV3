@@ -59,53 +59,50 @@
             // Define track id and sections array to be passed to FretiFlow
             const trackSections = state.track_window.current_track.sections;
             const trackId = state.track_window.current_track.id;
-
+      
             try {
               const response = await fetch(`http://localhost:5000/audio-analysis/${trackId}`);
               const data = await response.json();
               const sections = data.sections;
               const currentTimestamp = state.position / 1000; // Use the exact current timestamp without rounding
-            
-              
-            if (is_paused) {
+      
+              // Set up the interval for checking the timestamp
               if (pollRef.current) {
                 clearInterval(pollRef.current);
               }
-              return;
-            }
-
-            if (pollRef.current) {
-              clearInterval(pollRef.current);
-            }
-
-            const poll = setInterval(async () => {
-              try {
-                const playerStateResponse = await fetch('http://localhost:5000/player-state');
-                const playerStateData = await playerStateResponse.json();
-                const currentTimestamp = playerStateData.progress_ms / 1000;
-
-                const predictResponse = await fetch('http://localhost:5000/predict-scale-change', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ trackSections, currentTimestamp }),
-                });
-
-                const predictData = await predictResponse.json();
-                console.log(predictData);
-                // Set prediction state here if needed
-              } catch (error) {
-                console.log('Error retrieving prediction:', error);
-              }
-            }, 1000); // Poll every 1 second
-
-            pollRef.current = poll;
+      
+              const poll = setInterval(async () => {
+                try {
+                  const playerStateResponse = await fetch('http://localhost:5000/player-state');
+                  const playerStateData = await playerStateResponse.json();
+                  const currentTimestamp = playerStateData.progress_ms / 1000;
+                
+                  console.log('Current Timestamp:', currentTimestamp);
+                
+                  const predictResponse = await fetch('http://localhost:5000/predict-scale-change', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ currentTimestamp }),
+                  });
+                
+                  const predictData = await predictResponse.json();
+                  console.log('Has Match:', predictData.hasMatch);
+                
+                  // Set prediction state here if needed
+                } catch (error) {
+                  console.log('Error retrieving prediction:', error);
+                }
+              }, 1000); // Poll every 1 second
+      
+              pollRef.current = poll;
               setActive(true);
             } catch (error) {
               console.log('Error retrieving track analysis:', error);
             }          
           });
+      
 
           player.connect();
           isSDKInitialized.current = true;

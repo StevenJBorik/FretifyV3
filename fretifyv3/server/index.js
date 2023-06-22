@@ -86,15 +86,10 @@ const startServer = async () => {
     res.json({ access_token: access_token, refresh_token: refresh_token });
   });
 
-  let responseSent = false;
   let currentTimestamp = 0; // Initialize currentTimestamp variable
   let sections = []; // Declare sections array
 
   app.get('/audio-analysis/:id', async (req, res) => {
-    if (responseSent) {
-      return; // If the response has already been sent, don't process the request again
-    }
-
     const { id } = req.params;
 
     try {
@@ -113,7 +108,6 @@ const startServer = async () => {
 
       // Send the current timestamp and sections in the response
       res.json({ sections, currentTimestamp });
-      responseSent = true;
     } catch (error) {
       console.log('Error retrieving track analysis:', error);
       res.status(500).json({ error: 'Failed to retrieve track analysis' });
@@ -154,24 +148,56 @@ const startServer = async () => {
     }
   });
 
-  app.post('/predict-scale-change', (req, res) => {
+  app.post('/predict-scale-change', async (req, res) => {
     const { currentTimestamp } = req.body;
-
+  
     try {
+      await analyzeTrackAndCheckTimestamp(currentTimestamp);
+      console.log('Server - Current Timestamp:', currentTimestamp);
+      console.log('Server - Start Values:', sections.map((section) => section.start));
+      
       const hasMatch = checkTimeStamp(currentTimestamp);
-      res.json({ hasMatch });
+      const hasConsecutiveMatch = hasMatch && previousMatch;
+      previousMatch = hasMatch;
+  
+      res.json({ hasMatch, hasConsecutiveMatch });
     } catch (error) {
       console.error('Error checking timestamp:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+  
+
+  async function analyzeTrackAndCheckTimestamp(currentTimestamp) {
+    if (sections.length === 0) {
+      // If sections array is empty, analyze the track and retrieve sections
+      console.log('Analyzing track...');
+      const playerState = await spotifyApi.getMyCurrentPlaybackState();
+      if (playerState.body && playerState.body.item && playerState.body.item.id) {
+        const trackId = playerState.body.item.id;
+        const response = await spotifyApi.getAudioAnalysisForTrack(trackId);
+        sections = response.body.sections;
+        console.log('Sections:', sections);
+      }
+    }
+  }
+
+  let previousMatch = false; // Flag to track previous match
 
   function checkTimeStamp(currentTimestamp) {
-    const matchingSection = sections.find(
-      (section) => currentTimestamp >= section.start && currentTimestamp < section.start + section.duration
-    );
-    return matchingSection !== undefined;
+    console.log('Start Values:', sections.map((section) => section.start)); // Log the start values in the sections array
+
+    const matchingSection = sections.find((section) => Math.abs(section.start - currentTimestamp) < 1);
+
+    const hasMatch = matchingSection !== undefined;
+    const result = hasMatch && !previousMatch;
+
+    previousMatch = hasMatch;
+
+    return result;
   }
+
+  
 
   app.listen(port, () => {
     console.log(`Listening at http://localhost:${port}`);
