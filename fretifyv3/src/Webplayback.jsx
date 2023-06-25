@@ -75,7 +75,7 @@
 
                 const songDataResponse = await fetch(`http://localhost:5000/songdata/${encodeURIComponent(trackDataArtist)}/${encodeURIComponent(trackDataTitle)}`);
                 const songData = await songDataResponse.json();
-                console.log('Song Data:', songData);
+                console.log('Song Data:', songData);  
               }
               else {
                 console.log('Error retrieving track details:', responseTrackDetails.status);
