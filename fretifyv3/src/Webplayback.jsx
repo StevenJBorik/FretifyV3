@@ -21,14 +21,14 @@
       const script = document.createElement('script');
       script.src = 'https://sdk.scdn.co/spotify-player.js';
       script.async = true;
-
+    
       document.body.appendChild(script);
-
+    
       const readyListener = ({ device_id }) => {
         console.log('Ready with Device ID', device_id);
       };
-
-      window.onSpotifyWebPlaybackSDKReady = () => {
+    
+      window.onSpotifyWebPlaybackSDKReady = async () => {
         if (!isSDKInitialized.current) {
           const player = new window.Spotify.Player({
             name: 'Web Playback SDK',
@@ -37,25 +37,25 @@
             },
             volume: 0.5
           });
-
+    
           setPlayer(player);
-
+    
           player.addListener('ready', readyListener);
-
+    
           player.addListener('not_ready', ({ device_id }) => {
             console.log('Device ID has gone offline', device_id);
           });
-
+    
           player.addListener('player_state_changed', async (state) => {
             console.log('player_state_changed event triggered');
             if (!state) {
               return;
             }
-
-            // Update the track and paused state
+    
+            // Update the track and pau ed state
             setTrack(state.track_window.current_track);
             setPaused(state.paused);
-
+    
             // Define track id and sections array to be passed to FretiFlow
             const trackSections = state.track_window.current_track.sections;
             const trackId = state.track_window.current_track.id;
@@ -65,12 +65,28 @@
               const data = await response.json();
               const sections = data.sections;
               const currentTimestamp = state.position / 1000; // Use the exact current timestamp without rounding
-      
+              
+              const responseTrackDetails = await fetch(`http://localhost:5000/tracks/${trackId}`);
+              if (responseTrackDetails.ok) {
+                const trackData = await responseTrackDetails.json();
+                const trackDataArtist = trackData.artist;
+                const trackDataTitle = trackData.name;
+                console.log(trackDataArtist, trackDataTitle);
+
+                const songDataResponse = await fetch(`http://localhost:5000/songdata/${encodeURIComponent(trackDataArtist)}/${encodeURIComponent(trackDataTitle)}`);
+                const songData = await songDataResponse.json();
+                console.log('Song Data:', songData);
+              }
+              else {
+                console.log('Error retrieving track details:', responseTrackDetails.status);
+
+              }
+
               // Set up the interval for checking the timestamp
               if (pollRef.current) {
                 clearInterval(pollRef.current);
               }
-      
+              
               const poll = setInterval(async () => {
                 try {
                   const playerStateResponse = await fetch('http://localhost:5000/player-state');
@@ -98,17 +114,27 @@
       
               pollRef.current = poll;
               setActive(true);
+      
+              // // Fetch song data whenever the current_track changes
+              // try {
+              //   const response = await fetch(`http://localhost:5000/get-track/${current_track.id}`);
+              //   const songData = await response.json();
+              //   console.log('Song Data:', songData);
+              //   // Handle the song data response here
+              // } catch (error) {
+              //   console.log('Error retrieving song data:', error);
+              // }
             } catch (error) {
               console.log('Error retrieving track analysis:', error);
             }          
           });
       
-
+    
           player.connect();
           isSDKInitialized.current = true;
         }
       };
-
+    
       return () => {
         script.remove();
         window.onSpotifyWebPlaybackSDKReady = null;
@@ -117,8 +143,8 @@
           player.disconnect();
         }
       };
-    }, [token]);
-
+    }, [token, current_track]);
+    
     if (!is_active) {
       return (
         <div className="container">
