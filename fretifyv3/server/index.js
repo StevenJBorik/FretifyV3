@@ -179,7 +179,7 @@ const startServer = async () => {
     const $ = cheerio.load(response.data);
 
     const key = $('tbody#table_body tr.table_object:first-child td.table_key').text();
-
+    
     if (key) {
       console.log('Key:', key);
       res.json({ key });
